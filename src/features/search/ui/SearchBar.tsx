@@ -37,7 +37,7 @@ export const SearchBar = () => {
   return (
     <div ref={itemRef} className="relative flex items-center z-0 px-4">
       <div className="absolute z-10 left-7">
-        <SearchIcon />
+        <SearchIcon className="w-7 h-7 lg:w-7 lg:h-7" />
       </div>
       <div className="relative w-full">
         <SearchInput
