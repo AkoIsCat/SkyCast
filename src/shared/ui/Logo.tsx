@@ -1,4 +1,4 @@
-import  CloudIcon from '@/shared/asset/cloud.svg';
+import CloudIcon from '@/shared/asset/cloud.svg';
 
 export const Logo = () => {
   return (
