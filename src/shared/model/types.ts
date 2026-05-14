@@ -8,7 +8,8 @@ export type CardWidth =
   | 'favoriteItem' // 즐겨찾기 항목 아이템
   | 'hourlyItem' // 시간대 별 기온 아이템
   | 'tempStatItem' // 최고/최저 기온 아이템
-  | 'favoriteCard'; // 즐겨찾기 카드 아이템
+  | 'favoriteCard' // 즐겨찾기 카드 아이템
+  | 'recommended';
 
 export type CardShadow = 'hourlyItem' | 'default';
 
