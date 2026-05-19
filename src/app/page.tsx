@@ -22,43 +22,36 @@ import { TodayClothesSection } from "@/widgets/TodayClothes/ui/TodayClothesSecti
 import { RecommendedActivitiesSection } from "@/widgets/RecommendedActivities/ui/RecommendedActivitiesSection";
 import { useWeatherRecommendation } from "@/entities/weather/api/useWeatherRecommendation";
 
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.NEXT_PUBLIC_GEMINI_KEY, // 명시적으로 넣는 게 안전
-});
-
 export default function Home() {
+  const { coords, coordsResult } = useCoords();
+  const address = useAddress(coords);
 
-    const { coords, coordsResult } = useCoords();
-    const address = useAddress(coords);
-
-    const router = useRouter(); // 1. useNavigate 대신 useRouter 사용
-  const searchParams = useSearchParams(); // 2. 구조 분해 없이 그대로 호출
+  const router = useRouter(); 
+  const searchParams = useSearchParams(); 
   
-  // 3. searchParams.get()은 동일하게 작동합니다.
   const locationParam = searchParams?.get('location');
   
+  // 💡 무한 루프 방지를 위해 현재 스토어에 저장된 값(currentLocation)도 함께 가져옵니다.
   const { currentLocation, setCurrentLocation } = useWeatherStore();
   
-  // locationParam이 null일 수 있으므로 기본값 처리를 유지합니다.
   const coordsData = useAddressToCoords(locationParam || '');
 
+  // 💡 [수정] URL 파라미터 동기화 로직 최적화
   useEffect(() => {
-    // 1. URL에 location 파라미터가 아예 없을 때 (초기 접속 시)
+    // 1. URL에 파라미터가 없고 현재 내 위치 주소가 로드되었을 때 (최초 1번만 진입)
     if (!locationParam && address?.address_name) {
       router.push(`/?location=${encodeURIComponent(address.address_name)}`);
       setCurrentLocation(address.address_name);
+      return; // 실행 후 즉시 종료해서 아래 로직 타지 않게 방어
     }
 
-    // 2. URL에 location 파라미터가 존재할 때 (그 값을 스토어에 동기화)
-    // location이 string 타입일 때만 실행되도록 보장합니다.
-    if (typeof locationParam === 'string') {
+    // 2. URL 파라미터가 존재하고, '그 값이 현재 스토어의 값과 다를 때만' 스토어를 갱신합니다. (★핵심 잠금장치)
+    if (typeof locationParam === 'string' && locationParam !== currentLocation) {
       setCurrentLocation(locationParam);
     }
-  }, [locationParam, address, router, setCurrentLocation]);
+  }, [locationParam, address?.address_name, currentLocation, router, setCurrentLocation]); 
+  // 💡 의존성 배열에서 객체 전체인 'address' 대신 원시값인 'address.address_name'만 바라보게 하여 참조값 버그를 파괴합니다.
 
-  // 3. 좌표 계산 로직 (숫자 형변환 및 기본값 처리)
   const lat = coordsData?.[0]
     ? Number(coordsData[0].y)
     : coords?.[0] ?? 0;
@@ -67,61 +60,21 @@ export default function Home() {
     ? Number(coordsData[0].x)
     : coords?.[1] ?? 0;
 
-  // 4. 날씨 데이터 및 가공 데이터
   const { data: weather } = useWeather(lat, lon);
   const weatherDetail = useWeatherDetail(weather); 
   const parsedAddress = useParsedAddress(currentLocation);
   
   const isLoading = !weather;
 
-  async function llmStart() {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: `
-    현재 날씨 데이터: ${JSON.stringify(weather)}
-
-    위 데이터를 분석하여 '오늘의 옷차림'과 '오늘의 추천 활동'을 추천해줘.
-    반드시 한국어로 응답하고, 아래의 JSON 구조를 엄격히 지켜줘.
-
-    {
-      "clothing": {
-        "summary": "날씨에 대한 짧은 요약 문구",
-        "items": [
-          { "name": "옷 종류(예: 가디건)", "style": "상세 스타일링 제안" }
-        ]
-      },
-      "activity": {
-        "main": {
-          "title": "메인 활동 제목",
-          "reason": "추천 근거",
-          "tip": "주의사항 또는 팁"
-        },
-        "sub": "서브 활동 명칭 하나"
-      }
-    }
-
-    * 조건:
-    1. 옷차림 아이템은 날씨에 따라 개수를 조절하되 상의, 하의, 아우터 등 부위가 겹치지 않게 추천할 것.
-    2. 이모지나 특수 기호를 절대 사용하지 말 것. 오직 텍스트만 사용할 것.
-  `,
-  });
-
-  console.log(response.text); // 최신 SDK 기준
-}
-
-llmStart();
-
-   const { data: llmData, isLoading: llmIsLoading, isError: llmIsError } = useWeatherRecommendation(
+  // 💡 제미나이 호출 훅 (위에서 무한 렌더링을 잡았기 때문에 이제 딱 1번만 예쁘게 작동합니다)
+  const { data: llmData, isLoading: llmIsLoading } = useWeatherRecommendation(
     weather,
     locationParam!
   );
-  console.log(llmData)
-
 
   return (
      <main className="w-screen min-h-screen flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:gap-8 lg:px-0 lg:items-start box-border bg-[#F7F7FA]">
       {/* 상단 영역 */}
-      {/* 모바일에서는 세로 배치, 데스크탑에서는 가로 배치 */}
       <div className="flex flex-col gap-2 lg:col-span-12 lg:grid lg:grid-cols-12 lg:items-center lg:border-b lg:border-[#E9E9E9] lg:pb-6 bg-[#FFFFFF]">
         <header className="lg:col-span-3 px-4 pt-3 lg:px-10">
           <Logo />
@@ -131,6 +84,7 @@ llmStart();
           <SearchBar />
         </section>
       </div>
+      
       {coordsResult?.status === 'unavailable' && (
         <div className="w-125 lg:ml-162.5">
           <Card width="favoriteItem">
@@ -138,7 +92,7 @@ llmStart();
           </Card>
         </div>
       )}
-      {/* 현재 날씨 */}
+      
       {coordsResult?.status !== 'unavailable' && (
         <>
           {!weatherDetail ? (
@@ -167,10 +121,10 @@ llmStart();
           <FavoriteSection isLoading={isLoading} />
 
           {/* 오늘의 옷차림 */}
-          <TodayClothesSection isLoading={true} />
+          <TodayClothesSection clothData={llmData?.clothing} isLoading={llmIsLoading} />
 
           {/* 오늘의 추천 활동 */}
-          <RecommendedActivitiesSection />
+          <RecommendedActivitiesSection activeData={llmData?.activity} isLoading={llmIsLoading} />
         </>
       )}
     </main>

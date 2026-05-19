@@ -28,7 +28,7 @@ export const Card = ({
     tempStatItem:
       'w-[125px] lg:w-[calc(50%-0.5rem)] h-[30px] min-w-0 flex justify-center items-center gap-3 p-5 lg:p-6',
 
-    recommended: 'h-[440px] flex flex-col p-5 lg:p-6',
+    recommended: 'flex flex-col p-5 lg:p-6',
   };
 
   // 그림자 동적 css
