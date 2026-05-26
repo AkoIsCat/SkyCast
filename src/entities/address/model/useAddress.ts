@@ -4,76 +4,39 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAddress } from '@/entities/address/api/getAddress';
 
-export const useAddress = (
-  coords: [number, number] | undefined
-) => {
-  const [isKakaoLoaded, setIsKakaoLoaded] =
-    useState(false);
+export const useAddress = (coords: [number, number] | undefined) => {
+  const [isKakaoLoaded, setIsKakaoLoaded] = useState(false);
 
   useEffect(() => {
-    // 브라우저 환경 체크
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    // 1. 이미 로드되어 있는 경우
+    if (window.kakao?.maps) {
+      setIsKakaoLoaded(true);
       return;
     }
 
-    // 카카오 SDK 로드 체크
-    if (window.kakao?.maps) {
-      setIsKakaoLoaded(true);
-    }
+    // 2. 배포 환경에서 스크립트 로드가 늦어지는 경우를 대비한 폴링(Polling) 안전장치
+    const interval = setInterval(() => {
+      if (window.kakao?.maps) {
+        setIsKakaoLoaded(true);
+        clearInterval(interval);
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
   }, []);
 
-  console.log(
-    process.env.NEXT_PUBLIC_KAKAO_REST_KEY,
-    '카카오 키'
-  );
-
-  const query = useQuery({
+  const { data } = useQuery({
     queryKey: ['address', coords],
-
-    queryFn: async () => {
-      if (!coords) {
-        throw new Error('Coords is required');
-      }
-
-      console.log('좌표 전달:', coords);
-
-      try {
-        const response = await getAddress(coords);
-
-        console.log(
-          '카카오 API 응답:',
-          response
-        );
-
-        return response;
-      } catch (error) {
-        console.error(
-          '카카오 API 에러:',
-          error
-        );
-
-        throw error;
-      }
+    queryFn: () => {
+      if (!coords) throw new Error('Coords is required');
+      return getAddress(coords);
     },
-
-    // ✅ SDK 로드 후에만 실행
+    // ✅ 좌표가 있고, '카카오 SDK가 완전히 로드되었을 때만' 쿼리를 활성화합니다.
     enabled: !!coords && isKakaoLoaded,
-
-    select: (data) => {
-      console.log(
-        'select 이전 데이터:',
-        data
-      );
-
-      return data?.[0] ?? null;
-    },
-
-    retry: false,
+    select: (data) => data?.[0] ?? null,
   });
 
-  console.log('최종 data:', query.data);
-  console.log('query error:', query.error);
-  console.log('query status:', query.status);
-
-  return query.data;
+  return data;
 };
