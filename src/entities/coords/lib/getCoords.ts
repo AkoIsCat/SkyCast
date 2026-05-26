@@ -18,23 +18,27 @@ export const getCoords = (): Promise<CoordsResult> => {
 
     window.navigator.geolocation.getCurrentPosition(
       (position) => {
-        res({
-          status: 'success',
-          coords: [
-            position.coords.latitude,
-            position.coords.longitude,
-          ],
-        });
-      },
-      (error) => {
-        console.log('geolocation error', error);
+  console.log('SUCCESS', position);
 
-        if (error.code === error.PERMISSION_DENIED) {
-          res({ status: 'fallback', coords: DEFAULT_COORDS });
-        } else {
-          res({ status: 'unavailable' });
-        }
-      },
+  res({
+    status: 'success',
+    coords: [
+      position.coords.latitude,
+      position.coords.longitude,
+    ],
+  });
+},
+      (error) => {
+  console.log('geolocation error', error);
+  console.log('code:', error.code);
+  console.log('message:', error.message);
+
+  if (error.code === error.PERMISSION_DENIED) {
+    res({ status: 'fallback', coords: DEFAULT_COORDS });
+  } else {
+    res({ status: 'unavailable' });
+  }
+},
       {
         enableHighAccuracy: true,
         timeout: 10000,
