@@ -12,5 +12,6 @@ export const useAddress = (coords: [number, number] | undefined) => {
     enabled: !!coords,
     select: (data) => data[0],
   });
+  console.log(data, '카카오 응답 데이터');
   return data;
 };
