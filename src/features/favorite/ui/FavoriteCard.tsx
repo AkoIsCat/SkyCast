@@ -60,7 +60,7 @@ export const FavoriteCard = ({
             ) : (
               <>
                 <p className="text-lg">{alias}</p>
-                <PencilIcon onClick={onClickEdit} className='w-[15px] h-[15px]'/>
+                <PencilIcon onClick={onClickEdit} className='w-3.75 h-3.75'/>
               </>
             )}
           </div>

@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 
 // 💡 2. 기존 Metadata에 manifest 파일 연결 및 모바일 웹앱 태그 추가
 export const metadata: Metadata = {
-  title: "날씨 코디 추천 서비스",
+  title: "SkyCast",
   description: "날씨 기반 매칭 서비스",
   manifest: "/manifest.json", // 👈 메인 매니페스트 연결
   appleWebApp: {
@@ -42,6 +42,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "날씨코디",
   },
+  icons: {
+    icon: "/favicon.png",
+  }
 };
 
 
