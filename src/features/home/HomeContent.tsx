@@ -27,6 +27,8 @@ export default function HomeContent() {
   const { coords, coordsResult } = useCoords();
   const address = useAddress(coords);
 
+  console.log(coords);
+
   const router = useRouter(); 
   const searchParams = useSearchParams(); 
   
