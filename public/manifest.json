@@ -4,8 +4,8 @@
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
-  "name": "오늘의 날씨 추천 코디",
-  "short_name": "날씨코디",
+  "name": "SkyCast",
+  "short_name": "SkyCast",
   "description": "오늘의 날씨를 분석하여 알맞은 옷차림과 활동을 추천합니다.",
   "icons": [
     {
