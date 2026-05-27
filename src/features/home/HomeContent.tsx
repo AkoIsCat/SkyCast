@@ -54,8 +54,12 @@ export default function HomeContent() {
   }, [locationParam, address?.address_name, currentLocation, router, setCurrentLocation]); 
 
   // 4. 검색된 좌표가 있으면 그것을 쓰고, 없으면 현재 내 GPS 좌표를 기본값으로 사용
-  const lat = coordsData?.[0] ? Number(coordsData[0].y) : coords?.[0] ?? 0;
-  const lon = coordsData?.[0] ? Number(coordsData[0].x) : coords?.[1] ?? 0;
+  const rawLat = coordsData?.[0] ? Number(coordsData[0].y) : coords?.[0] ?? 0;
+  const rawLon = coordsData?.[0] ? Number(coordsData[0].x) : coords?.[1] ?? 0;
+
+  // 💡 [추가] 소수점 3자리까지만 남기고 반올림 (약 100m 이내의 미세한 움직임으로 인한 재요청 방지)
+  const lat = Number(rawLat.toFixed(3));
+  const lon = Number(rawLon.toFixed(3));
 
   // 5. 날씨 데이터 패칭 및 정보 가공
   const { data: weather } = useWeather(lat, lon);
@@ -65,10 +69,11 @@ export default function HomeContent() {
   const isWeatherLoading = !weather;
 
   // 6. 제미나이 AI 추천 데이터 패칭
-  const { data: llmData, isLoading: llmIsLoading } = useWeatherRecommendation(
-    weather,
-    locationParam ?? ''
-  );
+const { data: llmData, isLoading: llmIsLoading } = useWeatherRecommendation(
+  weather,
+  locationParam ?? '',
+  isWeatherLoading
+);
 
   return (
     <main className="w-screen min-h-screen flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:gap-8 lg:px-0 lg:items-start box-border bg-[#F7F7FA]">
